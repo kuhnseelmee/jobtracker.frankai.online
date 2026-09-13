@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const base = 'http://localhost:3001';
 const call = (method, data, headers = {}) =>
   fetch(`${base}/api/jobs`, {
-    method,
+    method: method === 'POST' ? 'POST' : 'PUT',
     headers: { 'Content-Type': 'application/json', Origin: base, ...headers },
     body: JSON.stringify(data),
   });
