@@ -5,6 +5,7 @@ import {
   blankJob,
   daysUntil,
   reminders,
+  todayBrisbane,
   toCsv,
 } from '../lib/jobs.ts';
 import { generateWorkshop } from '../lib/workshop.ts';
@@ -149,7 +150,7 @@ void test('application intelligence highlights missing preparation and deadline 
     ...blankJob(),
     role: 'Systems Analyst',
     company: 'Example Co',
-    deadline: '2026-09-14',
+    deadline: todayBrisbane(),
   });
   assert.ok(intelligence.readiness.score < 40);
   assert.equal(intelligence.readiness.readyToApply, false);
