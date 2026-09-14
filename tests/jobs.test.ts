@@ -9,7 +9,7 @@ import {
 } from '../lib/jobs.ts';
 import { generateWorkshop } from '../lib/workshop.ts';
 import { generateApplicationDocuments } from '../lib/documents.ts';
-import { createPdfBlob, pdfFileName } from '../lib/pdf.ts';
+import { createPdfBlob, createResumePdfBlob, pdfFileName } from '../lib/pdf.ts';
 void test('requires meaningful role and company', () => {
   assert.throws(() => validateJob(blankJob()), /role/i);
   assert.throws(
@@ -54,8 +54,11 @@ void test('accepts generated application documents and creates pdf blobs', () =>
   assert.match(v.resumeDraft, /TAILORED RESUME/);
   assert.match(v.coverLetterDraft, /Dear Hiring Manager/);
   const pdf = createPdfBlob(v.coverLetterDraft, 'Cover Letter');
+  const resumePdf = createResumePdfBlob(v.resumeDraft, 'Resume');
   assert.equal(pdf.type, 'application/pdf');
+  assert.equal(resumePdf.type, 'application/pdf');
   assert.ok(pdf.size > 1000);
+  assert.ok(resumePdf.size > 1000);
   assert.equal(
     pdfFileName('Raymond Wooler Resume - MediaForm Pty Ltd - IT Sales'),
     'Raymond_Wooler_Resume_-_MediaForm_Pty_Ltd_-_IT_Sales.pdf',

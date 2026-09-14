@@ -21,7 +21,7 @@ import {
 import { statuses, priorities, type Job, type JobData } from '@/lib/jobs';
 import { generateWorkshop } from '@/lib/workshop';
 import { generateApplicationDocuments } from '@/lib/documents';
-import { createPdfBlob, pdfFileName } from '@/lib/pdf';
+import { createPdfBlob, createResumePdfBlob, pdfFileName } from '@/lib/pdf';
 export function Choice({
   label,
   value,
@@ -158,7 +158,10 @@ export default function JobEditor({
       kind === 'resume'
         ? `Raymond Wooler Resume - ${draft.company} - ${draft.role}`
         : `Raymond Wooler Cover Letter - ${draft.company} - ${draft.role}`;
-    const blob = createPdfBlob(text, title);
+    const blob =
+      kind === 'resume'
+        ? createResumePdfBlob(text, title)
+        : createPdfBlob(text, title);
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
