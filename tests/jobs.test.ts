@@ -8,6 +8,8 @@ import {
   toCsv,
 } from '../lib/jobs.ts';
 import { generateWorkshop } from '../lib/workshop.ts';
+import { generateApplicationDocuments } from '../lib/documents.ts';
+import { createPdfBlob, pdfFileName } from '../lib/pdf.ts';
 void test('requires meaningful role and company', () => {
   assert.throws(() => validateJob(blankJob()), /role/i);
   assert.throws(
@@ -38,6 +40,26 @@ void test('accepts generated workshop fields', () => {
   assert.match(v.keySelectionCriteria, /Ozcare/);
   assert.match(v.employerResearch, /respect/i);
   assert.match(v.coverLetterWorkshop, /Cover letter workshop/);
+});
+void test('accepts generated application documents and creates pdf blobs', () => {
+  const job = {
+    ...blankJob(),
+    role: 'Business Development / Account Manager - IT Sales',
+    company: 'MediaForm Pty Ltd',
+    industry: 'ICT equipment supply and technology sales',
+  };
+  const generated = generateApplicationDocuments(job);
+  const v = validateJob({ ...job, ...generated });
+  assert.match(v.resumeDraft, /Raymond Douglas Wooler/);
+  assert.match(v.resumeDraft, /TAILORED RESUME/);
+  assert.match(v.coverLetterDraft, /Dear Hiring Manager/);
+  const pdf = createPdfBlob(v.coverLetterDraft, 'Cover Letter');
+  assert.equal(pdf.type, 'application/pdf');
+  assert.ok(pdf.size > 1000);
+  assert.equal(
+    pdfFileName('Raymond Wooler Resume - MediaForm Pty Ltd - IT Sales'),
+    'Raymond_Wooler_Resume_-_MediaForm_Pty_Ltd_-_IT_Sales.pdf',
+  );
 });
 void test('rejects invalid stages, date rollovers, unsafe URLs and large content', () => {
   const b = { ...blankJob(), role: 'A', company: 'B' };

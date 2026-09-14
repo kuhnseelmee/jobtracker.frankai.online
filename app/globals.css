@@ -654,6 +654,12 @@ td p {
 .workshop-head button {
   flex-shrink: 0;
 }
+.document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
 .form-help {
   font-size: 12px;
   color: #6a7c85;
@@ -828,6 +834,9 @@ td p {
   }
   .workshop-head {
     flex-direction: column;
+  }
+  .document-actions {
+    justify-content: flex-start;
   }
   .table-footer span:last-child {
     display: none;

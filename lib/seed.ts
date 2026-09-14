@@ -1,5 +1,6 @@
 import { blankJob, type Job } from './jobs';
 import { generateWorkshop } from './workshop';
+import { generateApplicationDocuments } from './documents';
 
 const rawSeedJobs: Job[] = [
   {
@@ -78,4 +79,5 @@ const rawSeedJobs: Job[] = [
 export const seedJobs: Job[] = rawSeedJobs.map((job) => ({
   ...job,
   ...generateWorkshop(job),
+  ...generateApplicationDocuments(job),
 }));

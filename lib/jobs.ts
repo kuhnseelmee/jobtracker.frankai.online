@@ -37,6 +37,8 @@ export function blankJob() {
     keySelectionCriteria: '',
     employerResearch: '',
     coverLetterWorkshop: '',
+    resumeDraft: '',
+    coverLetterDraft: '',
   };
 }
 
@@ -48,6 +50,8 @@ const longTextFields = [
   'keySelectionCriteria',
   'employerResearch',
   'coverLetterWorkshop',
+  'resumeDraft',
+  'coverLetterDraft',
 ] as const;
 
 export function validateJob(input: unknown): JobData {

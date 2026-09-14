@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,6 +20,8 @@ import {
 } from '@/components/ui/select';
 import { statuses, priorities, type Job, type JobData } from '@/lib/jobs';
 import { generateWorkshop } from '@/lib/workshop';
+import { generateApplicationDocuments } from '@/lib/documents';
+import { createPdfBlob, pdfFileName } from '@/lib/pdf';
 export function Choice({
   label,
   value,
@@ -77,6 +80,11 @@ export default function JobEditor({
       employerResearch: source.employerResearch || generated.employerResearch,
       coverLetterWorkshop:
         source.coverLetterWorkshop || generated.coverLetterWorkshop,
+      resumeDraft:
+        source.resumeDraft || generateApplicationDocuments(source).resumeDraft,
+      coverLetterDraft:
+        source.coverLetterDraft ||
+        generateApplicationDocuments(source).coverLetterDraft,
     };
   };
   const [draft, setDraft] = useState(() => withGeneratedWorkshop(job));
@@ -140,6 +148,23 @@ export default function JobEditor({
   }
   function generateApplicationWorkshop() {
     setDraft((d) => ({ ...d, ...generateWorkshop(d) }));
+  }
+  function generateDocuments() {
+    setDraft((d) => ({ ...d, ...generateApplicationDocuments(d) }));
+  }
+  function downloadPdf(kind: 'resume' | 'cover') {
+    const text = kind === 'resume' ? draft.resumeDraft : draft.coverLetterDraft;
+    const title =
+      kind === 'resume'
+        ? `Raymond Wooler Resume - ${draft.company} - ${draft.role}`
+        : `Raymond Wooler Cover Letter - ${draft.company} - ${draft.role}`;
+    const blob = createPdfBlob(text, title);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = pdfFileName(title);
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   return (
     <Dialog
@@ -241,6 +266,42 @@ export default function JobEditor({
                 {area('keySelectionCriteria', 'Key selection criteria')}
                 {area('employerResearch', 'Employer research')}
                 {area('coverLetterWorkshop', 'Cover letter workshop')}
+              </div>
+              <div className="workshop-head documents-head">
+                <div>
+                  <h3>Application documents</h3>
+                  <p className="form-help">
+                    Short tailored resume and formal cover letter drafts. Edit
+                    them here, then download clean PDFs.
+                  </p>
+                </div>
+                <div className="document-actions">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={generateDocuments}
+                  >
+                    <Sparkles size={16} /> Generate documents
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => downloadPdf('resume')}
+                  >
+                    <FileDown size={16} /> Resume PDF
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => downloadPdf('cover')}
+                  >
+                    <FileDown size={16} /> Cover letter PDF
+                  </Button>
+                </div>
+              </div>
+              <div className="form-grid">
+                {area('resumeDraft', 'Short tailored resume')}
+                {area('coverLetterDraft', 'Formal cover letter')}
               </div>
             </div>
             <div className="editor-footer">

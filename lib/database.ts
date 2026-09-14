@@ -2,6 +2,7 @@ import { env } from 'cloudflare:workers';
 import { seedJobs } from './seed';
 import { blankJob } from './jobs';
 import { generateWorkshop } from './workshop';
+import { generateApplicationDocuments } from './documents';
 import type { Job } from './jobs';
 export function getDb() {
   const db = (env as unknown as { DB: D1Database }).DB;
@@ -26,6 +27,7 @@ export async function listJobs(): Promise<Job[]> {
   return results.map((r) => {
     const data = { ...blankJob(), ...JSON.parse(r.data) };
     const generated = generateWorkshop(data);
+    const documents = generateApplicationDocuments(data);
     return {
       ...data,
       starResponses: data.starResponses || generated.starResponses,
@@ -34,6 +36,8 @@ export async function listJobs(): Promise<Job[]> {
       employerResearch: data.employerResearch || generated.employerResearch,
       coverLetterWorkshop:
         data.coverLetterWorkshop || generated.coverLetterWorkshop,
+      resumeDraft: data.resumeDraft || documents.resumeDraft,
+      coverLetterDraft: data.coverLetterDraft || documents.coverLetterDraft,
       id: r.id,
       version: r.version,
     };
