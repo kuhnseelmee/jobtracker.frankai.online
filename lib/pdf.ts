@@ -3,7 +3,10 @@ const pageHeight = 841.89;
 const margin = 54;
 const lineHeight = 15;
 const contentWidth = pageWidth - margin * 2;
+const defaultLinkedInUrl = 'https://www.linkedin.com/in/raymond-wooler-391866394';
 type FontName = 'F1' | 'F2';
+type PdfLink = { uri: string; x: number; y: number; width: number; height: number };
+type PdfPage = { operations: string; links?: PdfLink[] };
 
 function escapePdfText(value: string) {
   return value
@@ -58,6 +61,44 @@ function fillRect(
   color: string,
 ) {
   return `${color} rg ${x} ${y.toFixed(2)} ${width} ${height} re f`;
+}
+
+function estimateTextWidth(value: string, size: number) {
+  return value.length * size * 0.52;
+}
+
+function normaliseWebsiteUrl(value: string) {
+  const cleaned = value.trim().replace(/^https?:\/\//, '');
+  return `https://${cleaned}`;
+}
+
+function normaliseLinkedInUrl(value: string) {
+  if (/^https?:\/\//i.test(value)) return value;
+  if (/^www\./i.test(value)) return `https://${value}`;
+  if (/linkedin/i.test(value)) return defaultLinkedInUrl;
+  return '';
+}
+
+function drawIconBadge(label: string, x: number, baseline: number) {
+  const boxY = baseline - 9;
+  return [
+    fillRect(x, boxY, 16, 13, '0.03 0.50 0.51'),
+    drawText(label, x + 3, baseline - 6, {
+      font: 'F2',
+      size: label.length > 2 ? 4.6 : 5.8,
+      color: '0.02 0.11 0.13',
+    }),
+  ];
+}
+
+function drawFrankMark(x: number, y: number, size: number) {
+  return [
+    fillRect(x, y, size, size, '0.03 0.09 0.11'),
+    fillRect(x + size * 0.24, y + size * 0.66, size * 0.54, size * 0.12, '0.33 0.91 0.77'),
+    fillRect(x + size * 0.24, y + size * 0.21, size * 0.15, size * 0.57, '0.33 0.91 0.77'),
+    fillRect(x + size * 0.39, y + size * 0.48, size * 0.39, size * 0.11, '0.33 0.91 0.77'),
+    fillRect(x + size * 0.75, y + size * 0.12, size * 0.13, size * 0.13, '0.96 0.74 0.36'),
+  ];
 }
 
 function paginate(text: string) {
@@ -163,7 +204,7 @@ function parseResumeDraft(text: string) {
   };
 }
 
-function buildPdfFromStreams(streams: string[], title: string) {
+function buildPdfFromPages(pages: PdfPage[], title: string) {
   const objects: string[] = [];
   const add = (content: string) => {
     objects.push(content);
@@ -174,12 +215,20 @@ function buildPdfFromStreams(streams: string[], title: string) {
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
   );
   const pageRefs: number[] = [];
-  for (const operations of streams) {
+  for (const page of pages) {
     const streamObject = add(
-      `<< /Length ${operations.length} >>\nstream\n${operations}\nendstream`,
+      `<< /Length ${page.operations.length} >>\nstream\n${page.operations}\nendstream`,
     );
+    const annotRefs = (page.links ?? []).map((link) =>
+      add(
+        `<< /Type /Annot /Subtype /Link /Rect [${link.x.toFixed(2)} ${link.y.toFixed(2)} ${(link.x + link.width).toFixed(2)} ${(link.y + link.height).toFixed(2)}] /Border [0 0 0] /A << /S /URI /URI (${escapePdfText(link.uri)}) >> >>`,
+      ),
+    );
+    const annots = annotRefs.length
+      ? ` /Annots [${annotRefs.map((ref) => `${ref} 0 R`).join(' ')}]`
+      : '';
     const pageObject = add(
-      `<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontObject} 0 R /F2 ${boldFontObject} 0 R >> >> /Contents ${streamObject} 0 R >>`,
+      `<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontObject} 0 R /F2 ${boldFontObject} 0 R >> >> /Contents ${streamObject} 0 R${annots} >>`,
     );
     pageRefs.push(pageObject);
   }
@@ -212,40 +261,128 @@ function buildPdfFromStreams(streams: string[], title: string) {
 
 export function createResumePdfBlob(text: string, title: string) {
   const resume = parseResumeDraft(text);
-  const streams: string[] = [];
+  const pages: PdfPage[] = [];
   let ops: string[] = [];
+  let links: PdfLink[] = [];
   let y = 0;
+  const pushPage = () => {
+    if (ops.length) pages.push({ operations: ops.join('\n'), links });
+  };
+  const addLink = (label: string, uri: string, x: number, baseline: number, size: number) => {
+    links.push({
+      uri,
+      x,
+      y: baseline - 2,
+      width: estimateTextWidth(label, size),
+      height: size + 4,
+    });
+  };
+  const drawLinkedText = (
+    label: string,
+    uri: string,
+    x: number,
+    baseline: number,
+    size: number,
+    icon?: string,
+  ) => {
+    const textX = icon ? x + 24 : x;
+    if (icon) ops.push(...drawIconBadge(icon, x, baseline));
+    ops.push(
+      drawText(label, textX, baseline, {
+        size,
+        color: '0.62 0.91 0.92',
+      }),
+    );
+    addLink(label, uri, textX, baseline, size);
+  };
   const newPage = (first = false) => {
-    if (ops.length) streams.push(ops.join('\n'));
+    pushPage();
     ops = [];
-    ops.push(fillRect(0, pageHeight - 118, pageWidth, 118, '0.06 0.18 0.22'));
-    ops.push(fillRect(0, pageHeight - 122, pageWidth, 4, '0.03 0.50 0.51'));
-    ops.push(drawText(resume.name.toUpperCase(), margin, pageHeight - 48, {
+    links = [];
+    const headerHeight = first ? 186 : 118;
+    const headerBottom = pageHeight - headerHeight;
+    ops.push(fillRect(0, headerBottom, pageWidth, headerHeight, '0.06 0.18 0.22'));
+    ops.push(fillRect(0, headerBottom, pageWidth, 4, '0.03 0.50 0.51'));
+    const nameX = first ? margin + 48 : margin;
+    if (first) ops.push(...drawFrankMark(margin, pageHeight - 70, 34));
+    ops.push(drawText(resume.name.toUpperCase(), nameX, pageHeight - 47, {
       font: 'F2',
-      size: first ? 22 : 16,
+      size: first ? 21 : 16,
       color: '1 1 1',
     }));
     ops.push(
       drawText(
         resume.subtitle.replace('TAILORED RESUME - ', ''),
-        margin,
-        pageHeight - 71,
+        nameX,
+        pageHeight - 72,
         {
           font: 'F1',
-          size: 9,
+          size: 8.7,
           color: '0.78 0.87 0.89',
         },
       ),
     );
-    resume.contact.slice(0, 4).forEach((line, index) => {
-      ops.push(
-        drawText(line, margin, pageHeight - 90 - index * 11, {
-          size: 8.5,
-          color: '0.88 0.94 0.95',
-        }),
-      );
-    });
-    y = pageHeight - 155;
+    if (first) {
+      const contactX = 346;
+      const contactY = pageHeight - 92;
+      const contactSize = 8.8;
+      const [phone, email, linkedIn, websites] = resume.contact;
+      if (phone)
+        drawLinkedText(
+          phone,
+          `tel:${phone.replace(/\s+/g, '')}`,
+          contactX,
+          contactY,
+          contactSize,
+          'PH',
+        );
+      if (email)
+        drawLinkedText(
+          email,
+          `mailto:${email}`,
+          contactX,
+          contactY - 15,
+          contactSize,
+          '@',
+        );
+      if (linkedIn) {
+        const linkedInUrl = normaliseLinkedInUrl(linkedIn);
+        const linkedInText = linkedInUrl
+          ? linkedInUrl.replace(/^https?:\/\//i, '')
+          : 'LinkedIn profile available on request';
+        if (linkedInUrl)
+          drawLinkedText(
+            linkedInText,
+            linkedInUrl,
+            contactX,
+            contactY - 30,
+            contactSize,
+            'in',
+          );
+        else
+          ops.push(
+            drawText(linkedInText, contactX, contactY - 30, {
+              size: contactSize,
+              color: '0.88 0.94 0.95',
+            }),
+          );
+      }
+      const sites = (websites ?? '')
+        .split('|')
+        .map((site) => site.trim())
+        .filter(Boolean);
+      sites.slice(0, 2).forEach((site, index) => {
+        drawLinkedText(
+          site.replace(/^https?:\/\//i, ''),
+          normaliseWebsiteUrl(site),
+          contactX,
+          contactY - 45 - index * 15,
+          contactSize,
+          'WEB',
+        );
+      });
+    }
+    y = headerBottom - 32;
   };
   const ensureSpace = (needed: number) => {
     if (y - needed < margin) newPage();
@@ -300,8 +437,8 @@ export function createResumePdfBlob(text: string, title: string) {
     }
     y -= 3;
   }
-  if (ops.length) streams.push(ops.join('\n'));
-  return buildPdfFromStreams(streams, title);
+  pushPage();
+  return buildPdfFromPages(pages, title);
 }
 
 export function pdfFileName(name: string) {

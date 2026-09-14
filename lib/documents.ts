@@ -4,7 +4,7 @@ export const contactBlock = [
   'Raymond Douglas Wooler',
   '0402 203 723',
   'rdwooler@gmail.com',
-  'LinkedIn Profile',
+  'www.linkedin.com/in/raymond-wooler-391866394',
   'raywooler.online | frankai.online',
 ].join('\n');
 

@@ -41,7 +41,7 @@ void test('accepts generated workshop fields', () => {
   assert.match(v.employerResearch, /respect/i);
   assert.match(v.coverLetterWorkshop, /Cover letter workshop/);
 });
-void test('accepts generated application documents and creates pdf blobs', () => {
+void test('accepts generated application documents and creates pdf blobs', async () => {
   const job = {
     ...blankJob(),
     role: 'Business Development / Account Manager - IT Sales',
@@ -59,6 +59,12 @@ void test('accepts generated application documents and creates pdf blobs', () =>
   assert.equal(resumePdf.type, 'application/pdf');
   assert.ok(pdf.size > 1000);
   assert.ok(resumePdf.size > 1000);
+  const resumePdfText = await resumePdf.text();
+  assert.match(resumePdfText, /\/Subtype \/Link/);
+  assert.match(resumePdfText, /mailto:rdwooler@gmail.com/);
+  assert.match(resumePdfText, /https:\/\/www.linkedin.com\/in\/raymond-wooler-391866394/);
+  assert.match(resumePdfText, /https:\/\/raywooler.online/);
+  assert.match(resumePdfText, /https:\/\/frankai.online/);
   assert.equal(
     pdfFileName('Raymond Wooler Resume - MediaForm Pty Ltd - IT Sales'),
     'Raymond_Wooler_Resume_-_MediaForm_Pty_Ltd_-_IT_Sales.pdf',
