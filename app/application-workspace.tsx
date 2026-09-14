@@ -80,10 +80,12 @@ export default function ApplicationWorkspace({
   job,
   onClose,
   onEdit,
+  canEdit,
 }: {
   job: Job;
   onClose: () => void;
   onEdit: () => void;
+  canEdit: boolean;
 }) {
   const intelligence = buildApplicationIntelligence(job);
   const packageText = [
@@ -160,9 +162,11 @@ export default function ApplicationWorkspace({
         </section>
 
         <section className="workspace-actions" aria-label="Workspace actions">
-          <Button onClick={onEdit} type="button">
-            <ClipboardCheck size={16} /> Edit application inputs
-          </Button>
+          {canEdit && (
+            <Button onClick={onEdit} type="button">
+              <ClipboardCheck size={16} /> Edit application inputs
+            </Button>
+          )}
           <Button
             onClick={() =>
               download(

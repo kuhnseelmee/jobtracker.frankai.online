@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Flag,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,10 +90,13 @@ function calendar(job: Job, date: string, kind: string) {
 export default function Tracker({
   initialJobs,
   initialError = '',
+  user,
 }: {
   initialJobs: Job[];
   initialError?: string;
+  user: { email: string; role: 'administrator' | 'guest' };
 }) {
+  const canEdit = user.role === 'administrator';
   const [jobs, setJobs] = useState(initialJobs),
     [error, setError] = useState(initialError),
     [notice, setNotice] = useState(''),
@@ -103,6 +107,17 @@ export default function Tracker({
     [stage, setStage] = useState('All active'),
     [sort, setSort] = useState('Recently saved'),
     [tab, setTab] = useState('opportunities');
+  const openEditor = (job: Job | JobData) => {
+    if (!canEdit) {
+      setNotice('Guest access is read-only.');
+      return;
+    }
+    setEditing(job);
+  };
+  async function signOut() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.assign('/');
+  }
   const [today, setToday] = useState(todayBrisbane);
   useEffect(() => {
     const t = setInterval(() => setToday(todayBrisbane()), 60000);
@@ -186,7 +201,7 @@ export default function Tracker({
         return r.json();
       },
     });
-    register({
+    if (canEdit) register({
       name: 'save_new_job_opportunity',
       description:
         'Create a saved job opportunity. Does not send a job application or contact an employer.',
@@ -219,7 +234,7 @@ export default function Tracker({
     });
     return () => lifecycle.abort();
     // The save path uses functional state updates, so these tools do not need to re-register.
-  }, []);
+  }, [canEdit]);
   const active = jobs.filter((j) => j.status !== 'Archived');
   const actions = useMemo(() => reminders(jobs, today), [jobs, today]);
   const shown = useMemo(
@@ -276,8 +291,11 @@ export default function Tracker({
           <BriefcaseBusiness /> Career Tracker
         </div>
         <span className="private-label">
-          <ShieldCheck size={15} /> Ray’s workspace · Private
+          <ShieldCheck size={15} /> {user.role === 'administrator' ? 'Administrator' : 'Guest · read-only'}
         </span>
+        <Button className="signout-button" onClick={signOut} size="sm" variant="ghost">
+          <LogOut size={15} /> Sign out
+        </Button>
       </header>
       <section className="page">
         <div className="eyebrow">YOUR NEXT CHAPTER</div>
@@ -290,7 +308,7 @@ export default function Tracker({
             </h1>
             <p>Keep your search organised, from the first save to the offer.</p>
           </div>
-          <Button className="add-button" onClick={() => setEditing(blankJob())}>
+          <Button className="add-button" disabled={!canEdit} onClick={() => openEditor(blankJob())}>
             <Plus size={18} /> Add opportunity
           </Button>
         </div>
@@ -409,7 +427,7 @@ export default function Tracker({
                           <div>
                             <button
                               className="role-link"
-                              onClick={() => setEditing(job)}
+                              onClick={() => openEditor(job)}
                             >
                               {job.role}
                             </button>
@@ -475,7 +493,8 @@ export default function Tracker({
                             aria-label={`Edit ${job.company} opportunity`}
                             variant="ghost"
                             size="icon"
-                            onClick={() => setEditing(job)}
+                            disabled={!canEdit}
+                            onClick={() => openEditor(job)}
                           >
                             <ArrowUpRight size={20} />
                           </Button>
@@ -503,10 +522,10 @@ export default function Tracker({
                   onClick={() => {
                     setQuery('');
                     setStage('All active');
-                    if (!jobs.length) setEditing(blankJob());
+                    if (!jobs.length) openEditor(blankJob());
                   }}
                 >
-                  {jobs.length ? 'Clear filters' : 'Add opportunity'}
+                  {jobs.length ? 'Clear filters' : canEdit ? 'Add opportunity' : 'Guest access is read-only'}
                 </Button>
               </div>
             )}
@@ -551,7 +570,7 @@ export default function Tracker({
                       <span className="action-kind">
                         {a.kind} · {displayDate(a.date)}
                       </span>
-                      <button onClick={() => setEditing(a.job)}>
+                      <button disabled={!canEdit} onClick={() => openEditor(a.job)}>
                         {a.job.company}
                       </button>
                       <p>{a.job.nextAction || a.job.role}</p>
@@ -564,7 +583,8 @@ export default function Tracker({
                     </Button>
                     <Button
                       variant="ghost"
-                      onClick={() => setEditing(a.job)}
+                      disabled={!canEdit}
+                      onClick={() => openEditor(a.job)}
                       aria-label={`Edit reminder for ${a.job.company}`}
                     >
                       <ArrowRight size={18} />
@@ -582,8 +602,8 @@ export default function Tracker({
                 </p>
                 <Button
                   onClick={() => {
-                    if (active[0]) setEditing(active[0]);
-                    else setEditing(blankJob());
+                    if (active[0]) openEditor(active[0]);
+                    else openEditor(blankJob());
                   }}
                 >
                   Set your first reminder
@@ -658,9 +678,10 @@ export default function Tracker({
           <ApplicationWorkspace
             job={workspaceJob}
             onClose={() => setWorkspaceJob(null)}
+            canEdit={canEdit}
             onEdit={() => {
               setWorkspaceJob(null);
-              setEditing(workspaceJob);
+              openEditor(workspaceJob);
             }}
           />
         )}

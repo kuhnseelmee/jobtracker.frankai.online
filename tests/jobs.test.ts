@@ -11,6 +11,13 @@ import { generateWorkshop } from '../lib/workshop.ts';
 import { generateApplicationDocuments } from '../lib/documents.ts';
 import { createPdfBlob, createResumePdfBlob, pdfFileName } from '../lib/pdf.ts';
 import { buildApplicationIntelligence } from '../lib/intelligence.ts';
+import {
+  authenticate,
+  cookieValue,
+  createSession,
+  readSession,
+  sessionCookieName,
+} from '../lib/auth.ts';
 void test('requires meaningful role and company', () => {
   assert.throws(() => validateJob(blankJob()), /role/i);
   assert.throws(
@@ -148,4 +155,34 @@ void test('application intelligence highlights missing preparation and deadline 
   assert.equal(intelligence.readiness.readyToApply, false);
   assert.ok(intelligence.readiness.blockers.some((item) => /requirements/i.test(item)));
   assert.ok(intelligence.deadlineRisk.includes('today'));
+});
+void test('authenticates the two configured roles and signs expiring sessions', async () => {
+  const secrets = { adminPassword: 'admin-test-pass', guestPassword: 'guest-test-pass' };
+  const administrator = await authenticate(
+    'ADMIN@jobtracker.frankai.online',
+    'admin-test-pass',
+    secrets,
+  );
+  const guest = await authenticate(
+    'guest@jobtracker.frankai.online',
+    'guest-test-pass',
+    secrets,
+  );
+  assert.deepEqual(administrator, {
+    email: 'admin@jobtracker.frankai.online',
+    role: 'administrator',
+  });
+  assert.deepEqual(guest, {
+    email: 'guest@jobtracker.frankai.online',
+    role: 'guest',
+  });
+  assert.equal(await authenticate('guest@jobtracker.frankai.online', 'wrong', secrets), null);
+  const session = await createSession(administrator!, secrets, 1000);
+  assert.deepEqual(await readSession(session.value, secrets, 1001), {
+    ...administrator,
+    expiresAt: 44200,
+  });
+  assert.equal(await readSession(session.value, secrets, 44200), null);
+  assert.equal(await readSession(`${session.value}tampered`, secrets, 1001), null);
+  assert.equal(cookieValue(`other=1; ${sessionCookieName}=ok`, sessionCookieName), 'ok');
 });

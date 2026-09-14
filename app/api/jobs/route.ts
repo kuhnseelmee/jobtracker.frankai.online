@@ -1,9 +1,17 @@
 import { getDb, listJobs } from '@/lib/database';
+import { getRequestSession } from '@/lib/auth-server';
 import { validateJob } from '@/lib/jobs';
 const json = (value: unknown, status = 200) =>
   Response.json(value, { status, headers: { 'Cache-Control': 'no-store' } });
 const maxJobPayloadBytes = 90000;
-export async function GET() {
+export async function GET(request: Request) {
+  try {
+    if (!(await getRequestSession(request)))
+      return json({ error: 'Please sign in to access your tracker.' }, 401);
+  } catch (error) {
+    console.error('Authentication check failed', error);
+    return json({ error: 'Authentication is temporarily unavailable.' }, 503);
+  }
   try {
     return json({ jobs: await listJobs() });
   } catch (e) {
@@ -21,6 +29,15 @@ export async function PUT(request: Request) {
   return write(request, true);
 }
 async function write(request: Request, update: boolean) {
+  try {
+    const session = await getRequestSession(request);
+    if (!session) return json({ error: 'Please sign in to make changes.' }, 401);
+    if (session.role !== 'administrator')
+      return json({ error: 'Guest access is read-only.' }, 403);
+  } catch (error) {
+    console.error('Authentication check failed', error);
+    return json({ error: 'Authentication is temporarily unavailable.' }, 503);
+  }
   if (request.headers.get('origin') !== new URL(request.url).origin)
     return json({ error: 'This request must come from your tracker.' }, 403);
   if (!request.headers.get('content-type')?.startsWith('application/json'))
