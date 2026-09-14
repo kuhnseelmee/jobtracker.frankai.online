@@ -33,8 +33,23 @@ export function blankJob() {
     notes: '',
     nextAction: '',
     checkedAt: '',
+    starResponses: '',
+    keySelectionCriteria: '',
+    employerResearch: '',
+    coverLetterWorkshop: '',
   };
 }
+
+const longTextFields = [
+  'requirements',
+  'why',
+  'notes',
+  'starResponses',
+  'keySelectionCriteria',
+  'employerResearch',
+  'coverLetterWorkshop',
+] as const;
+
 export function validateJob(input: unknown): JobData {
   if (!input || typeof input !== 'object' || Array.isArray(input))
     throw new Error('Please provide job details.');
@@ -45,7 +60,9 @@ export function validateJob(input: unknown): JobData {
       if (typeof value !== 'string') throw new Error(`${key} must be text.`);
       if (
         value.length >
-        (['requirements', 'why', 'notes'].includes(key) ? 10000 : 1000)
+        (longTextFields.includes(key as (typeof longTextFields)[number])
+          ? 10000
+          : 1000)
       )
         throw new Error(`${key} is too long.`);
       return [key, value.trim()];

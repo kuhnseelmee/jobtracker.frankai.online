@@ -633,6 +633,27 @@ td p {
   padding-top: 22px;
   border-top: 1px solid #e3e9ec;
 }
+.workshop-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 26px 0 17px;
+  padding-top: 22px;
+  border-top: 1px solid #e3e9ec;
+}
+.workshop-head h3 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.workshop-head .form-help {
+  margin-top: 7px;
+  max-width: 520px;
+}
+.workshop-head button {
+  flex-shrink: 0;
+}
 .form-help {
   font-size: 12px;
   color: #6a7c85;
@@ -804,6 +825,9 @@ td p {
   }
   .editor-body {
     max-height: calc(92dvh - 260px);
+  }
+  .workshop-head {
+    flex-direction: column;
   }
   .table-footer span:last-child {
     display: none;

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { statuses, priorities, type Job, type JobData } from '@/lib/jobs';
+import { generateWorkshop } from '@/lib/workshop';
 export function Choice({
   label,
   value,
@@ -65,7 +67,19 @@ export default function JobEditor({
   onClose: () => void;
   onSave: (job: Job | JobData) => Promise<void>;
 }) {
-  const [draft, setDraft] = useState(job);
+  const withGeneratedWorkshop = (source: Job | JobData) => {
+    const generated = generateWorkshop(source);
+    return {
+      ...source,
+      starResponses: source.starResponses || generated.starResponses,
+      keySelectionCriteria:
+        source.keySelectionCriteria || generated.keySelectionCriteria,
+      employerResearch: source.employerResearch || generated.employerResearch,
+      coverLetterWorkshop:
+        source.coverLetterWorkshop || generated.coverLetterWorkshop,
+    };
+  };
+  const [draft, setDraft] = useState(() => withGeneratedWorkshop(job));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const set = (key: keyof JobData, value: string) =>
@@ -123,6 +137,9 @@ export default function JobEditor({
         />
       </div>
     );
+  }
+  function generateApplicationWorkshop() {
+    setDraft((d) => ({ ...d, ...generateWorkshop(d) }));
   }
   return (
     <Dialog
@@ -202,6 +219,28 @@ export default function JobEditor({
                   'Résumé version, cover letter, interview notes or feedback…',
                 )}
                 {field('checkedAt', 'Listing last checked', 'date')}
+              </div>
+              <div className="workshop-head">
+                <div>
+                  <h3>Frank’s application workshop</h3>
+                  <p className="form-help">
+                    Generated from this job’s listing details, employer and your
+                    saved experience notes. Edit anything before using it.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={generateApplicationWorkshop}
+                >
+                  <Sparkles size={16} /> Generate with Frank
+                </Button>
+              </div>
+              <div className="form-grid">
+                {area('starResponses', 'STAR responses')}
+                {area('keySelectionCriteria', 'Key selection criteria')}
+                {area('employerResearch', 'Employer research')}
+                {area('coverLetterWorkshop', 'Cover letter workshop')}
               </div>
             </div>
             <div className="editor-footer">

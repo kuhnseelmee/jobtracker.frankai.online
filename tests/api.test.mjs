@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-const base = 'http://localhost:3001';
+const base = process.env.TEST_BASE || 'http://localhost:3001';
 const call = (method, data, headers = {}) =>
   fetch(`${base}/api/jobs`, {
     method: method === 'POST' ? 'POST' : 'PUT',
@@ -72,7 +72,7 @@ test('database persists edits and blocks invalid or conflicting writes', async (
     415,
   );
   assert.equal(
-    (await call('POST', { role: 'X', company: 'Y', notes: 'x'.repeat(45000) }))
+    (await call('POST', { role: 'X', company: 'Y', notes: 'x'.repeat(95000) }))
       .status,
     413,
   );

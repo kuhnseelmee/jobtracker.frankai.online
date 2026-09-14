@@ -2,6 +2,7 @@ import { getDb, listJobs } from '@/lib/database';
 import { validateJob } from '@/lib/jobs';
 const json = (value: unknown, status = 200) =>
   Response.json(value, { status, headers: { 'Cache-Control': 'no-store' } });
+const maxJobPayloadBytes = 90000;
 export async function GET() {
   try {
     return json({ jobs: await listJobs() });
@@ -24,7 +25,7 @@ async function write(request: Request, update: boolean) {
     return json({ error: 'This request must come from your tracker.' }, 403);
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     return json({ error: 'Please send job details as JSON.' }, 415);
-  if (Number(request.headers.get('content-length') || 0) > 40000)
+  if (Number(request.headers.get('content-length') || 0) > maxJobPayloadBytes)
     return json({ error: 'Job details are too large.' }, 413);
   let raw: Record<string, unknown>;
   let data;
@@ -38,7 +39,7 @@ async function write(request: Request, update: boolean) {
       const part = await reader.read();
       if (part.done) break;
       length += part.value.byteLength;
-      if (length > 40000) {
+      if (length > maxJobPayloadBytes) {
         await reader.cancel();
         return json({ error: 'Job details are too large.' }, 413);
       }

@@ -7,6 +7,7 @@ import {
   reminders,
   toCsv,
 } from '../lib/jobs.ts';
+import { generateWorkshop } from '../lib/workshop.ts';
 void test('requires meaningful role and company', () => {
   assert.throws(() => validateJob(blankJob()), /role/i);
   assert.throws(
@@ -23,6 +24,20 @@ void test('accepts clean data and strips unknown fields', () => {
   });
   assert.equal(v.role, 'Analyst');
   assert.equal('admin' in v, false);
+});
+void test('accepts generated workshop fields', () => {
+  const job = {
+    ...blankJob(),
+    role: 'Business Analyst',
+    company: 'Ozcare',
+    industry: 'Health Care and Social Assistance',
+  };
+  const generated = generateWorkshop(job);
+  const v = validateJob({ ...job, ...generated });
+  assert.match(v.starResponses, /STAR Response 1/);
+  assert.match(v.keySelectionCriteria, /Ozcare/);
+  assert.match(v.employerResearch, /respect/i);
+  assert.match(v.coverLetterWorkshop, /Cover letter workshop/);
 });
 void test('rejects invalid stages, date rollovers, unsafe URLs and large content', () => {
   const b = { ...blankJob(), role: 'A', company: 'B' };

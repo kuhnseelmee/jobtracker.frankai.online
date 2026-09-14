@@ -1,5 +1,7 @@
 import { blankJob, type Job } from './jobs';
-export const seedJobs: Job[] = [
+import { generateWorkshop } from './workshop';
+
+const rawSeedJobs: Job[] = [
   {
     ...blankJob(),
     id: 'anglicare-business-analyst-1706',
@@ -72,3 +74,8 @@ export const seedJobs: Job[] = [
       'Onsite address: 246 Evans Road, Salisbury QLD 4107. Listing readable on 14 September. Employer careers page: https://www.mediaform.com.au/contact-us/employment/',
   },
 ];
+
+export const seedJobs: Job[] = rawSeedJobs.map((job) => ({
+  ...job,
+  ...generateWorkshop(job),
+}));
