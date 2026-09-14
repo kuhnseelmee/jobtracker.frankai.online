@@ -2,6 +2,7 @@ import type { JobData } from './jobs';
 
 export const contactBlock = [
   'Raymond Douglas Wooler',
+  'Caboolture, QLD 4510',
   '0402 203 723',
   'rdwooler@gmail.com',
   'www.linkedin.com/in/raymond-wooler-391866394',
@@ -157,11 +158,8 @@ export function generateApplicationDocuments(job: JobData): Pick<
     'Application Fit',
     applicationFit(job),
     '',
-    'Education and Accreditations',
-    '- Graduated Senior - Springwood State High School, QLD',
-    '- Diploma of Management coursework - Axiom College, Brisbane',
-    '- Forklift Truck Certificate - Competent Support Services',
-    '- Certificate of Participation, Senior Division - University of Southern Queensland Australian Computer Competition',
+    'Additional Achievement',
+    '- Renbukan Karate: 3rd Dan, achieved 1992; experienced karate referee.',
     '',
     'Referees',
     'Available upon request.',

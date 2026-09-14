@@ -10,6 +10,7 @@ import {
 import { generateWorkshop } from '../lib/workshop.ts';
 import { generateApplicationDocuments } from '../lib/documents.ts';
 import { createPdfBlob, createResumePdfBlob, pdfFileName } from '../lib/pdf.ts';
+import { buildApplicationIntelligence } from '../lib/intelligence.ts';
 void test('requires meaningful role and company', () => {
   assert.throws(() => validateJob(blankJob()), /role/i);
   assert.throws(
@@ -113,4 +114,38 @@ void test('CSV escapes quotes and spreadsheet formula injection', () => {
   ]);
   assert.match(s, /'=CMD/);
   assert.match(s, /A,""B""/);
+});
+void test('builds a grounded application workspace without treating missing evidence as complete', () => {
+  const intelligence = buildApplicationIntelligence({
+    ...blankJob(),
+    role: 'Business Analyst',
+    company: 'Ozcare',
+    industry: 'Health Care and Social Assistance',
+    requirements:
+      'Process mapping, stakeholder engagement, UAT and enterprise applications.',
+    why: 'I want to improve systems that support care staff.',
+    employerResearch: 'Employer research completed.',
+    starResponses: 'STAR Response 1 - Improving workplace systems',
+    keySelectionCriteria: 'Business analysis and process improvement',
+    resumeDraft: 'Tailored resume draft',
+    coverLetterDraft: 'Tailored cover letter draft',
+  });
+  assert.ok(intelligence.readiness.score >= 70);
+  assert.equal(intelligence.readiness.readyToApply, true);
+  assert.match(intelligence.jobDna, /Ozcare/);
+  assert.match(intelligence.interviewPack, /stakeholder/i);
+  assert.match(intelligence.truthCheck, /personally verify/i);
+  assert.match(intelligence.applicationPack, /Resume PDF/);
+});
+void test('application intelligence highlights missing preparation and deadline risk', () => {
+  const intelligence = buildApplicationIntelligence({
+    ...blankJob(),
+    role: 'Systems Analyst',
+    company: 'Example Co',
+    deadline: '2026-09-14',
+  });
+  assert.ok(intelligence.readiness.score < 40);
+  assert.equal(intelligence.readiness.readyToApply, false);
+  assert.ok(intelligence.readiness.blockers.some((item) => /requirements/i.test(item)));
+  assert.ok(intelligence.deadlineRisk.includes('today'));
 });

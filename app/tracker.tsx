@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import JobEditor, { Choice } from './job-editor';
+import ApplicationWorkspace from './application-workspace';
 import {
   blankJob,
   validateJob,
@@ -97,6 +98,7 @@ export default function Tracker({
     [notice, setNotice] = useState(''),
     [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Job | JobData | null>(null),
+    [workspaceJob, setWorkspaceJob] = useState<Job | null>(null),
     [query, setQuery] = useState(''),
     [stage, setStage] = useState('All active'),
     [sort, setSort] = useState('Recently saved'),
@@ -459,14 +461,25 @@ export default function Tracker({
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          aria-label={`Edit ${job.company} opportunity`}
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditing(job)}
-                        >
-                          <ArrowUpRight size={20} />
-                        </Button>
+                        <div className="row-actions">
+                          <Button
+                            aria-label={`Open application workspace for ${job.company}`}
+                            className="workspace-button"
+                            onClick={() => setWorkspaceJob(job)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Sparkles size={15} /> Workspace
+                          </Button>
+                          <Button
+                            aria-label={`Edit ${job.company} opportunity`}
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditing(job)}
+                          >
+                            <ArrowUpRight size={20} />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -604,6 +617,15 @@ export default function Tracker({
                 <Check /> Plan a follow-up
               </span>
             </div>
+            {active[0] && (
+              <Button
+                className="open-workspace"
+                onClick={() => setWorkspaceJob(active[0])}
+                variant="outline"
+              >
+                <Sparkles size={16} /> Open Frank’s application workspace
+              </Button>
+            )}
           </section>
           <aside className="source-card">
             <ShieldCheck size={21} />
@@ -622,16 +644,26 @@ export default function Tracker({
           <span>{displayDate(today)} · Brisbane</span>
         </footer>
       </section>
-      {editing && (
-        <JobEditor
+        {editing && (
+          <JobEditor
           key={'id' in editing ? `${editing.id}-${editing.version}` : 'new'}
           job={editing}
           onClose={() => setEditing(null)}
           onSave={async (d) => {
             await save(d);
           }}
-        />
-      )}
+          />
+        )}
+        {workspaceJob && (
+          <ApplicationWorkspace
+            job={workspaceJob}
+            onClose={() => setWorkspaceJob(null)}
+            onEdit={() => {
+              setWorkspaceJob(null);
+              setEditing(workspaceJob);
+            }}
+          />
+        )}
       {notice && (
         <output className="saved-toast">
           <Check size={17} />

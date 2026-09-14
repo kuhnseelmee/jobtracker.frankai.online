@@ -184,7 +184,7 @@ function parseResumeDraft(text: string) {
     'Selected Key Skills',
     'Relevant Experience Highlights',
     'Application Fit',
-    'Education and Accreditations',
+    'Additional Achievement',
     'Referees',
   ]);
   let current: { title: string; rows: string[] } | null = null;
@@ -326,13 +326,20 @@ export function createResumePdfBlob(text: string, title: string) {
       const contactX = 346;
       const contactY = pageHeight - 92;
       const contactSize = 8.8;
-      const [phone, email, linkedIn, websites] = resume.contact;
+      const [location, phone, email, linkedIn, websites] = resume.contact;
+      if (location)
+        ops.push(
+          drawText(location, contactX, contactY, {
+            size: contactSize,
+            color: '0.88 0.94 0.95',
+          }),
+        );
       if (phone)
         drawLinkedText(
           phone,
           `tel:${phone.replace(/\s+/g, '')}`,
           contactX,
-          contactY,
+          contactY - 15,
           contactSize,
           'PH',
         );
@@ -341,7 +348,7 @@ export function createResumePdfBlob(text: string, title: string) {
           email,
           `mailto:${email}`,
           contactX,
-          contactY - 15,
+          contactY - 30,
           contactSize,
           '@',
         );
@@ -355,13 +362,13 @@ export function createResumePdfBlob(text: string, title: string) {
             linkedInText,
             linkedInUrl,
             contactX,
-            contactY - 30,
+            contactY - 45,
             contactSize,
             'in',
           );
         else
           ops.push(
-            drawText(linkedInText, contactX, contactY - 30, {
+            drawText(linkedInText, contactX, contactY - 45, {
               size: contactSize,
               color: '0.88 0.94 0.95',
             }),
@@ -376,7 +383,7 @@ export function createResumePdfBlob(text: string, title: string) {
           site.replace(/^https?:\/\//i, ''),
           normaliseWebsiteUrl(site),
           contactX,
-          contactY - 45 - index * 15,
+          contactY - 60 - index * 15,
           contactSize,
           'WEB',
         );
