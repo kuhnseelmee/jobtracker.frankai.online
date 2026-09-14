@@ -70,6 +70,72 @@ function applicationFit(job: JobData) {
   return `This background is relevant to ${job.company} because the role requires clear analysis, stakeholder communication, documentation, practical system thinking and the ability to understand operational needs. My experience across technical systems and care-related workflows gives me a useful bridge between frontline work and technology improvement.`;
 }
 
+function advertisedOn(job: JobData) {
+  if (job.url.includes('seek.com')) return 'SEEK';
+  if (job.url.includes('indeed.com')) return 'Indeed';
+  if (job.url.includes('talent.com')) return 'Talent.com';
+  return job.url ? 'the advertised listing' : 'the job advertisement';
+}
+
+function addressee(job: JobData) {
+  const firstContact = job.contact.split('·')[0]?.trim();
+  if (firstContact && !firstContact.includes('@') && !/\d{4}/.test(firstContact))
+    return firstContact;
+  return 'Hiring Manager';
+}
+
+function organisationResearchPoint(job: JobData) {
+  if (job.company === 'Anglicare Southern Queensland')
+    return 'its practical community support work and focus on helping vulnerable people across Queensland';
+  if (job.company === 'Ozcare')
+    return 'its person-centred care services and values of respect, integrity, compassion and empathy';
+  if (job.company === 'MediaForm Pty Ltd')
+    return 'its long-standing role as an Australian technology supplier supporting business customers with practical IT and office solutions';
+  return 'the organisation’s work and the opportunity to contribute practical skills in a professional team';
+}
+
+function kscExamples(job: JobData) {
+  if (isSalesRole(job)) {
+    return [
+      [
+        'Customer service and client communication',
+        'In my computer retail and technical support experience, I regularly worked with customers to understand their needs, explain technology clearly and recommend practical options. This supported stronger customer relationships and better service outcomes.',
+      ],
+      [
+        'Technology product knowledge',
+        'When assisting customers with hardware, software and system issues, I used technical troubleshooting skills to identify the problem and explain suitable repair or product options in plain English.',
+      ],
+      [
+        'Sales support and follow-up',
+        'I have experience with stock control, supplier communication, accounts, customer records and operational follow-up, while maintaining accuracy and professional communication.',
+      ],
+      [
+        'Organisation and willingness to learn',
+        'I am comfortable learning new products, systems and workplace procedures. My varied IT, retail and operations background has trained me to adapt quickly while staying organised and reliable.',
+      ],
+    ];
+  }
+
+  return [
+    [
+      'Business analysis and process improvement',
+      'In my work with Amma Care Support Services, I helped translate frontline property, support coordination and compliance requirements into digital workflow concepts. This supported clearer documentation, better evidence capture and more practical systems thinking.',
+    ],
+    [
+      'Stakeholder communication',
+      'When working across operational and technical tasks, I communicated with both technical and non-technical people, asked questions to understand the need and explained systems or issues in plain English.',
+    ],
+    [
+      'Systems and technical problem-solving',
+      'I have diagnosed and resolved hardware, software, network and user support issues across a long technical career, while documenting important details and focusing on practical outcomes.',
+    ],
+    [
+      'Documentation, accuracy and learning',
+      'I understand the importance of accurate documentation, compliance awareness and continuous learning. I am comfortable learning new systems and turning complex requirements into clearer steps for users and teams.',
+    ],
+  ];
+}
+
 export function generateApplicationDocuments(job: JobData): Pick<
   JobData,
   'resumeDraft' | 'coverLetterDraft'
@@ -101,9 +167,7 @@ export function generateApplicationDocuments(job: JobData): Pick<
     'Available upon request.',
   ].join('\n');
 
-  const employerReason = isSalesRole(job)
-    ? 'I am particularly interested in this role because it allows me to combine practical IT knowledge, customer service, account support and business development.'
-    : 'I am particularly interested in this role because it allows me to combine technical knowledge, business process improvement, documentation and practical systems thinking.';
+  const kscs = kscExamples(job);
 
   const coverLetterDraft = [
     contactBlock,
@@ -119,26 +183,34 @@ export function generateApplicationDocuments(job: JobData): Pick<
     job.company,
     job.location || '',
     '',
-    `Dear ${job.contact && !job.contact.includes('@') ? job.contact.split('·')[0].trim() : 'Hiring Manager'},`,
+    `Dear ${addressee(job)},`,
     '',
-    `Re: Application for ${job.role}`,
+    `RE: Application for ${job.role} position`,
     '',
-    `I am writing to express my interest in the ${job.role} position with ${job.company}. ${employerReason}`,
+    `I am writing to apply for the ${job.role} position with ${job.company}, as advertised on ${advertisedOn(job)}. I am interested in this opportunity because of ${organisationResearchPoint(job)}. This role stood out to me because the job advertisement highlights requirements that connect with my practical experience, including ${selectedSkills(job)
+      .slice(0, 2)
+      .join(' and ')
+      .toLowerCase()}.`,
     '',
-    resumeProfile(job),
+    'I have enclosed my resume to support my application. It shows that I would bring important attributes to the position, including:',
     '',
-    applicationFit(job),
+    `${kscs[0][0]}: ${kscs[0][1]}`,
     '',
-    `In previous roles, I have developed a strong practical base across IT support, systems administration, customer service, business operations, documentation and problem-solving. I am comfortable investigating issues, asking clear questions, organising information and communicating with people who have different levels of technical knowledge.`,
+    `${kscs[1][0]}: ${kscs[1][1]}`,
     '',
-    `I would welcome the opportunity to discuss how my experience and approach could support ${job.company}. Thank you for considering my application.`,
+    `${kscs[2][0]}: ${kscs[2][1]}`,
     '',
-    'Kind regards,',
+    `${kscs[3][0]}: ${kscs[3][1]}`,
     '',
-    'Raymond Wooler',
+    `I believe I would be a suitable candidate for this position because I bring ${isSalesRole(job) ? 'technical knowledge, customer service experience and commercial awareness' : 'systems thinking, documentation skills and practical technical experience'} with a genuine interest in ${job.industry || 'this field'}. ${applicationFit(job)}`,
+    '',
+    `Thank you for considering my application. I would welcome the opportunity to discuss how my skills, experience and interest in this role could support ${job.company}. I am available for interview and can be contacted on 0402 203 723.`,
+    '',
+    'Sincerely,',
+    '',
+    'Raymond Douglas Wooler',
   ]
-    .filter((line) => line !== '')
-    .join('\n\n');
+    .join('\n');
 
   return { resumeDraft, coverLetterDraft };
 }
