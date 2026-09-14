@@ -13,6 +13,7 @@ import {
   Flag,
   Sparkles,
   LogOut,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +29,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import JobEditor, { Choice } from './job-editor';
 import ApplicationWorkspace from './application-workspace';
+import ImportJob from './import-job';
 import {
   blankJob,
   validateJob,
@@ -103,6 +105,7 @@ export default function Tracker({
     [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Job | JobData | null>(null),
     [workspaceJob, setWorkspaceJob] = useState<Job | null>(null),
+    [importing, setImporting] = useState(false),
     [query, setQuery] = useState(''),
     [stage, setStage] = useState('All active'),
     [sort, setSort] = useState('Recently saved'),
@@ -308,9 +311,20 @@ export default function Tracker({
             </h1>
             <p>Keep your search organised, from the first save to the offer.</p>
           </div>
-          <Button className="add-button" disabled={!canEdit} onClick={() => openEditor(blankJob())}>
-            <Plus size={18} /> Add opportunity
-          </Button>
+          <div className="heading-actions">
+            {canEdit && (
+              <Button
+                className="import-button"
+                variant="outline"
+                onClick={() => setImporting(true)}
+              >
+                <Link2 size={17} /> Import from URL
+              </Button>
+            )}
+            <Button className="add-button" disabled={!canEdit} onClick={() => openEditor(blankJob())}>
+              <Plus size={18} /> Add opportunity
+            </Button>
+          </div>
         </div>
         <div className="metrics">
           {stats.map(([n, t], i) => (
@@ -682,6 +696,15 @@ export default function Tracker({
             onEdit={() => {
               setWorkspaceJob(null);
               openEditor(workspaceJob);
+            }}
+          />
+        )}
+        {importing && (
+          <ImportJob
+            onClose={() => setImporting(false)}
+            onUseDraft={(draft) => {
+              setImporting(false);
+              openEditor(draft);
             }}
           />
         )}
